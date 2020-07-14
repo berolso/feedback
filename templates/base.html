@@ -23,6 +23,20 @@
       >
         <span class="navbar-toggler-icon"></span>
       </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            {% if 'username' in session %}
+            <li class="nav-item">
+              <a class="navbar-brand disabled" aria-disabled="true">{{session['username']}}</a>
+            </li>
+            <a class="nav-link" href="/logout">Logout</a>
+            {% else %}
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </nav>
 
     {% for category, msg in get_flashed_messages(with_categories=true) %}

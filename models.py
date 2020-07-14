@@ -1,4 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy 
+from flask_sqlalchemy import SQLAlchemy
+
 from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
@@ -35,8 +36,9 @@ class User(db.Model):
     hashed_utf8 = hashed.decode("utf8")
 
     # return instance of user w/username and hashed pwd
-    print()
-    return cls(username=username, password=hashed_utf8,email=email,first_name=first_name,last_name=last_name)
+    user = cls(username=username, password=hashed_utf8,email=email,first_name=first_name,last_name=last_name)
+
+    return user
 
   @classmethod
   def authenticate(cls, username, pwd):

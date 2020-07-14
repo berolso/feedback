@@ -4,6 +4,9 @@ from flask import Flask, request, jsonify, render_template, redirect, session, f
 from models import db, connect_db, User
 from sqlalchemy import func
 from forms import NewUserForm, LoginUserForm
+from werkzeug.exceptions import Unauthorized
+from sqlalchemy.exc import IntegrityError
+import inspect
 
 
 app = Flask(__name__)
@@ -50,11 +53,17 @@ def register_new():
     # create new user
     user = User.register(un,pwd,eml,fn,ln)
     db.session.add(user)
-    db.session.commit()
+    # check for duplicate entry
+    try:
+      db.session.commit()
+    except IntegrityError as e:
+      # print(inspect.getmembers(e.orig.diag))
+      flash(e.orig.diag.message_detail)
+      return redirect('/register')
     # add new user to current session
     session['username'] = user.username
-    print('user added: ', user)
-    return redirect('/secret')
+    flash('new user added')
+    return redirect(f'/users/{user.username}')
   # if get or not valid post
   else:
     return render_template('new_user.html', form=form)
@@ -73,21 +82,38 @@ def login_user():
     if user:
       session['username'] = user.username
       flash(f'logged in as {user.username}')
-      return redirect('/secret')
+      return redirect(f'/users/{user.username}')
     else:
       form.username.errors = ['Incorrect Username or Password']
   return render_template('/login.html',form=form)
 
 @app.route('/logout')
 def logout_user():
-  session.pop('username')
+  session.pop("username")
   flash('you have logged out')
   return redirect('/login')
 
-@app.route('/secret')
-def secret_route():
+@app.route('/users/<username>')
+def user_route(username):
+  '''show user page'''
   if 'username' not in session:
+    raise Unauthorized()
     flash('you must be logged in!')
     return redirect('/login')
   else:
-    return render_template('/secret.html')
+    user = User.query.filter_by(username=username).first()
+    return render_template('/user.html',user=user)
+
+@app.route('/users/<username>/delete')
+def delete_user(username):
+  '''delete user'''
+  if "username" not in session or username != session['username']:
+    raise Unauthorized()
+    flash('you must be logged in!')
+    return redirect(f'/users/{username}')
+  user = User.query.filter_by(username=username).first()
+  db.session.delete(user)
+  db.session.commit()
+  session.pop('username')
+  return redirect('/login')
+  

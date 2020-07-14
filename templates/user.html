@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}{{user.username}}{% endblock %} {%
+block content %}
+
+<h1>{{user.full_name}} page!!</h1>
+<ul>
+  <li>{{user.username}}</li>
+  <li>{{user.email}}</li>
+  <li>{{user.password}}</li>
+</ul>
+<a href="/users/{{user.username}}/delete" method="POST">Delete</a>
+
+{% endblock %}
