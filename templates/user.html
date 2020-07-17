@@ -2,11 +2,12 @@
 block content %}
 
 <h1>{{user.full_name}} page!!</h1>
+<a href="/users/{{user.username}}/feedback/add">Add Feedback</a>
 <ul>
   <li>{{user.username}}</li>
   <li>{{user.email}}</li>
   <li>{{user.password}}</li>
 </ul>
-<a href="/users/{{user.username}}/delete" method="POST">Delete</a>
+<a href="/users/{{user.username}}/delete">Delete</a>
 
 {% endblock %}

@@ -1,9 +1,9 @@
 """Flask app for Cupcakes"""
 
 from flask import Flask, request, jsonify, render_template, redirect, session, flash
-from models import db, connect_db, User
+from models import db, connect_db, User, Feedback
 from sqlalchemy import func
-from forms import NewUserForm, LoginUserForm
+from forms import NewUserForm, LoginUserForm, FeedbackForm
 from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 import inspect
@@ -58,11 +58,12 @@ def register_new():
       db.session.commit()
     except IntegrityError as e:
       # print(inspect.getmembers(e.orig.diag))
-      flash(e.orig.diag.message_detail)
-      return redirect('/register')
+      # flash(e.orig.diag.message_detail,'danger')
+      form.username.errors = [e.orig.diag.message_detail]
+      return render_template('/new_user.html', form=form)
     # add new user to current session
     session['username'] = user.username
-    flash('new user added')
+    flash('new user added','success')
     return redirect(f'/users/{user.username}')
   # if get or not valid post
   else:
@@ -81,7 +82,7 @@ def login_user():
     user = User.authenticate(un,pwd)
     if user:
       session['username'] = user.username
-      flash(f'logged in as {user.username}')
+      flash(f'logged in as {user.username}','success')
       return redirect(f'/users/{user.username}')
     else:
       form.username.errors = ['Incorrect Username or Password']
@@ -90,15 +91,15 @@ def login_user():
 @app.route('/logout')
 def logout_user():
   session.pop("username")
-  flash('you have logged out')
+  flash('you have logged out','success')
   return redirect('/login')
 
 @app.route('/users/<username>')
 def user_route(username):
   '''show user page'''
   if 'username' not in session:
-    raise Unauthorized()
-    flash('you must be logged in!')
+    # raise Unauthorized()
+    flash('you must be logged in!','danger')
     return redirect('/login')
   else:
     user = User.query.filter_by(username=username).first()
@@ -108,12 +109,33 @@ def user_route(username):
 def delete_user(username):
   '''delete user'''
   if "username" not in session or username != session['username']:
-    raise Unauthorized()
-    flash('you must be logged in!')
-    return redirect(f'/users/{username}')
+    # raise Unauthorized()
+    flash('you must be logged in to delete user!','danger')
+    return redirect(f'/login')
   user = User.query.filter_by(username=username).first()
   db.session.delete(user)
   db.session.commit()
   session.pop('username')
   return redirect('/login')
   
+@app.route('/users/<username>/feedback/add',methods=["GET","POST"])
+def new_feedback_form(username):
+  '''create new feedback'''
+  # verify user is logged in
+  if "username" not in session or username != session['username']:
+    flash('you must be logged in to add feedback user!','danger')
+    return redirect(f'/login')
+  form = FeedbackForm()
+  if form.validate_on_submit():
+    title = form.title.data
+    content = form.content.data
+    # authenticate user in User class
+    feedback = Feedback(title=title,content=content,username=username)
+    if feedback:
+      db.session.add(feedback)
+      db.session.commit()
+      flash(f'{username} added "{title}"','success')
+      return redirect(f'/users/{username}')
+    else:
+      form.username.errors = ['Title must be less than 100 characters']
+  return render_template('/feedback.html',form=form)
