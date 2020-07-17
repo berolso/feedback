@@ -36,7 +36,13 @@ def page_not_found(e):
 @app.route('/')
 def index():
   '''home page'''
-  return redirect('/register')
+  # show login if user is not
+  if 'username' not in session:
+    return redirect('/login')
+  # if logged in show list of all comments
+  feedback = Feedback.query.all()
+  username = session['username']
+  return render_template('index.html', feedback=feedback,username=username)
 
 @app.route('/register', methods=['GET','POST'])
 def register_new():
@@ -125,17 +131,54 @@ def new_feedback_form(username):
   if "username" not in session or username != session['username']:
     flash('you must be logged in to add feedback user!','danger')
     return redirect(f'/login')
+  # get user
+  user = User.query.filter_by(username=username).first()
+
   form = FeedbackForm()
   if form.validate_on_submit():
     title = form.title.data
     content = form.content.data
     # authenticate user in User class
-    feedback = Feedback(title=title,content=content,username=username)
-    if feedback:
-      db.session.add(feedback)
+    new_feedback = Feedback(title=title,content=content,username=username)
+    if new_feedback:
+      db.session.add(new_feedback)
       db.session.commit()
       flash(f'{username} added "{title}"','success')
       return redirect(f'/users/{username}')
     else:
       form.username.errors = ['Title must be less than 100 characters']
-  return render_template('/feedback.html',form=form)
+  return render_template('/feedback.html',form=form, user=user)
+
+@app.route('/feedback/<int:id>/edit',methods=["GET","POST"])
+def edit_feedback_form(id):
+  '''edit feedback'''
+  feedback = Feedback.query.get(id)
+  # verify user is logged in
+  if "username" not in session or feedback.username != session['username']:
+    flash('you must be logged in to edit feedback!','danger')
+    return redirect(f'/login')
+  form = FeedbackForm(obj=feedback)
+  if form.validate_on_submit():
+    feedback.title = form.title.data
+    feedback.content = form.content.data
+
+    db.session.commit()
+
+    return redirect(f"/users/{feedback.username}")
+
+  return render_template("/feedback_edit.html", form=form, feedback=feedback)
+
+@app.route('/feedback/<int:id>/delete',methods=["POST"])
+def delete_feedback(id):
+  '''delete feedback'''
+  feedback = Feedback.query.get(id)
+  # verify user is logged in
+  if "username" not in session or feedback.username != session['username']:
+    flash('you must be logged in to edit feedback!','danger')
+    return redirect(f'/login')
+  if form.validate_on_submit():
+
+    db.session.delete(feedback)
+    db.session.commit()
+
+  return redirect(f"/users/{feedback.username}")

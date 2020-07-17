@@ -28,7 +28,7 @@
           <li class="nav-item">
             {% if 'username' in session %}
             <li class="nav-item">
-              <a class="navbar-brand disabled" aria-disabled="true">{{session['username']}}</a>
+              <a class="navbar-brand" href="/users/{{session['username']}}" aria-disabled="true">{{session['username']}}</a>
             </li>
             <a class="nav-link" href="/logout">Logout</a>
             {% else %}

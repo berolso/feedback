@@ -1,4 +1,23 @@
 {% extends 'base.html' %} {% block title %}Feedback{% endblock %} {% block
 content %}
 <h1>Feedback</h1>
-{%include 'feedback_form.html'%} {% endblock %}
+<h2>Add New Feedback</h2>
+{%include 'feedback_form.html'%} 
+<h1>Feedback</h1>
+<div>
+  <div class="card m-3">
+    <div>
+      <h3 class="card-title m-4">My Feedback</h3>
+      <ul>
+        {% for c in user.feedback %}
+        <li>
+          <h6>{{c.title}}</h6>
+          "{{c.content}}" -
+          {{user.username}}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
